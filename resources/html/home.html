@@ -33,9 +33,12 @@
     {% style "/assets/material-icons/css/material-icons.min.css" %}
     {% style "/css/screen.css" %}
 
-    <script type="text/javascript">
-        var csrfToken = "{{csrf-token}}";
-    </script>
+
     {% script "/js/app.js" %}
+    <script type="text/javascript">
+      var csrfToken = "{{csrf-token}}";
+      luminus_full_stack.client.init_BANG_();
+    </script>
+
   </body>
 </html>

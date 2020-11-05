@@ -10,6 +10,7 @@
                  [com.fasterxml.jackson.core/jackson-core "2.11.3"]
                  [com.fasterxml.jackson.core/jackson-databind "2.11.3"]
                  [com.google.javascript/closure-compiler-unshaded "v20200504" :scope "provided"]
+                 [org.clojure/tools.logging "1.1.0"]
                  [conman "0.9.0"]
                  [cprop "0.1.17"]
                  [expound "0.8.6"]
@@ -72,7 +73,9 @@
      :autorun true}}}
   
   :npm-deps []
-  :npm-dev-deps [[xmlhttprequest "1.8.0"]]
+  :npm-dev-deps [[xmlhttprequest "1.8.0"]
+                 [react "16.14.0"]                 
+                 [react-dom "16.14.0"]]
 
   :profiles
   {:uberjar {:omit-source true
@@ -86,7 +89,8 @@
    :dev           [:project/dev :profiles/dev]
    :test          [:project/dev :project/test :profiles/test]
 
-   :project/dev  {:jvm-opts ["-Dconf=dev-config.edn" ]
+   :project/dev  {:jvm-opts ["-Dconf=dev-config.edn"
+                             "-Xmx1g"]
                   :dependencies [[binaryage/devtools "1.0.2"]
                                  [cider/piggieback "0.5.1"]
                                  [pjstadig/humane-test-output "0.10.0"]
