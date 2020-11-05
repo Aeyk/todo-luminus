@@ -1,6 +1,7 @@
 (ns luminus-full-stack.client
-  (:require [rum.core :as rum]
-            [taoensso.sente  :as sente :refer (cb-success?)]))
+  (:require 
+   [rum.core :as rum]
+   [taoensso.sente  :as sente :refer (cb-success?)]))
 
 (def handlers {:on-message (fn [e] (prn (.-data e)))
                :on-open    #(prn "Opening a new connection")
@@ -26,17 +27,33 @@
   )
 (enable-console-print!)
 
-(rum/defc hello [text]
-  [:pre.app 
+(def comments (atom ["I can be a comment" "I can too"]))
+(def potential-comment (atom ""))
+
+(def state (atom "John"))
+
+(rum/defc em-tag [text]
+  [:pre
    (str "<em>"text"</em>")])
 
-(rum/defc numbered-list [n]
-  (for [x (range 1 (inc n))]
-    [:div (str x)]))
+(defn on-edit [e]
+  (let [value (.. e -target -value)]
+    (println value)
+    (reset! state value)
+    true))
+
+(rum/defc my-input < rum/reactive
+  [text]
+  [:input 
+   {:type "text"
+    :value (rum/react text)
+    :on-change on-edit}])
 
 (defn start []
   (rum/mount 
-    [(hello "Hello")]
+    [(em-tag "Hello")
+     (my-input state)
+     ]
     (js/document.getElementById "app")))
 
 (defn ^:export init! []

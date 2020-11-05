@@ -75,7 +75,8 @@
   :npm-deps []
   :npm-dev-deps [[xmlhttprequest "1.8.0"]
                  [react "16.14.0"]                 
-                 [react-dom "16.14.0"]]
+                 [react-dom "16.14.0"]
+                 ]
 
   :profiles
   {:uberjar {:omit-source true
