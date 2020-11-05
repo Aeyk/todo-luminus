@@ -37,7 +37,9 @@
                  [org.clojure/google-closure-library "0.0-20191016-6ae1f72f" :scope "provided"]
                  [org.clojure/tools.cli "1.0.194"]
                  [org.clojure/tools.logging "1.1.0"]
+
                  [org.postgresql/postgresql "42.2.18"]
+                 [com.impossibl.pgjdbc-ng/pgjdbc-ng "0.8.6"]
                  [org.webjars.npm/bulma "0.9.1"]
                  [org.webjars.npm/material-icons "0.3.1"]
                  [org.webjars/webjars-locator "0.40"]
