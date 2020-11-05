@@ -1,4 +1,4 @@
-(ns luminus-full-stack.core)
+(ns luminus-full-stack.client)
 
 (defn ^:dev/after-load mount-components []
   (let [content (js/document.getElementById "app")]

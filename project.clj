@@ -64,7 +64,7 @@
     {:target :browser
      :output-dir "target/cljsbuild/public/js"
      :asset-path "/js"
-     :modules {:app {:entries [luminus-full-stack.app]}}
+     :modules {:app {:entries [luminus-full-stack.client]}}
      :devtools {:watch-dir "resources/public"}}
     :test
     {:target :node-test
