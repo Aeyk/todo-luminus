@@ -19,3 +19,7 @@ WHERE id = :id
 -- :doc deletes a user record given the id
 DELETE FROM users
 WHERE id = :id
+
+-- :name event! :! :n
+-- :doc insert a new event
+INSERT INTO events (event) VALUES (:event)

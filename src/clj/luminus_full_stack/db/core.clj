@@ -8,16 +8,15 @@
     [clojure.tools.logging :as log]
     [conman.core :as conman]
     [luminus-full-stack.config :refer [env]]
-    [mount.core :refer [defstate]])
+    [mount.core :refer [defstate] :as mount])
   (:import
-   com.impossibl.postgres.api.jdbc.PGNotificationListener
-
-   ))
-
+   [com.impossibl.postgres.api.jdbc PGNotificationListener]
+   [com.impossibl.postgres.jdbc PGDriver]))
 
 (defstate ^:dynamic *db*
   :start (if-let [jdbc-url (env :database-url)]
            (conman/connect! {:jdbc-url jdbc-url})
+           
            (do
              (log/warn "database connection URL was not found, please set :database-url in your config, e.g: dev-config.edn")
              *db*))
@@ -81,19 +80,32 @@
 ;;         (.setObject stmt idx (clj->jsonb-pgobj v))))))
 
 
-(defstate notifications-connection
-  :start (jdbc/get-connection {:connection-uri (env :database-url)})
-  :stop (.close notifications-connection))
+;; (defn add-listener [conn id listener-fn]
+;;   (let [listener (proxy [PGNotificationListener] []
+;;                    (notification [chan-id channel message]
+;;                      (listener-fn chan-id channel message)))]
+;;     (.addNotificationListener conn listener)
+;;     (jdbc/execute!
+;;       {:connection notifications-connection}
+;;       ["LISTEN ?" (name id)])
+;;     listener))
 
-(defn add-listener [conn id listener-fn]
-  (let [listener (proxy [PGNotificationListener] []
-                   (notification [chan-id channel message]
-                     (listener-fn chan-id channel message)))]
-    (.addNotificationListener conn listener)
-    (jdbc/execute!
-      {:connection notifications-connection}
-      ["LISTEN ? ?" name id])
+
+(def listener
+  (reify PGNotificationListener
+    (^void notification 
+     [this ^int processId ^String channelName ^String payload]
+     (log/log :info payload))))
+
+(defn add-listener []
+  (doto (jdbc/get-connection 
+          (env :database-url))
+    (.addNotificationListener listener))
+  (jdbc/execute!
+    (env :database-url)
+    ["LISTEN events;"]))
+
+
+(defn remove-listener []
+  (.removeNotificationListener (jdbc/get-connection (env :database-url))
     listener))
-
-(defn remove-listener [conn listener]
-  (.removeNotificationListener conn listener))

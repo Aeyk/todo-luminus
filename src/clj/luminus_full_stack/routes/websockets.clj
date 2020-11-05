@@ -1,5 +1,6 @@
 (ns luminus-full-stack.routes.websockets  
-  (:require [reitit.ring :as ring]
+  (:require [luminus-full-stack.db.core :as db]
+            [reitit.ring :as ring]
             [reitit.core :as route]
             [org.httpkit.server :as server
              :refer [send! with-channel on-close on-receive]]            
@@ -11,6 +12,9 @@
             [clojure.tools.logging :as log]))
 
 (defonce channels (atom #{}))
+
+(defn persist-event! [_ event]
+  (db/event! {:event event}))
 
 (defn connect! [channel]
  (log/log :info "channel open")
