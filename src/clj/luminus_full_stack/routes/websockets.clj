@@ -1,5 +1,5 @@
 (ns luminus-full-stack.routes.websockets  
-  (:require [luminus-full-stack.db.core :as db]
+  (:require [luminus-full-stack.db.core :as db]            
             [reitit.ring :as ring]
             [reitit.core :as route]
             [org.httpkit.server :as server
@@ -15,21 +15,20 @@
 
 (let [packer :edn
       ;; (sente-transit/get-transit-packer) ; needs Transit dep
-
       chsk-server
       (sente/make-channel-socket-server!
        (get-sch-adapter) {:packer packer})
-
       {:keys [ch-recv send-fn connected-uids
               ajax-post-fn ajax-get-or-ws-handshake-fn]}
       chsk-server]
-
   (def ring-ajax-post                ajax-post-fn)
   (def ring-ajax-get-or-ws-handshake ajax-get-or-ws-handshake-fn)
   (def ch-chsk                       ch-recv) ; ChannelSocket's receive channel
   (def chsk-send!                    send-fn) ; ChannelSocket's send API fn
   (def connected-uids                connected-uids) ; Watchable, read-only atom
   )
+
+(defonce channels (atom #{}))
 
 (defn persist-event! [_ event]
   (db/event! {:event event}))
@@ -55,10 +54,27 @@
 (add-watch connected-uids :connected-uids
   (fn [_ _ old new]
     (when (not= old new)
-      (log/log :info (str "Connected uids change: %s" new)))))
+      (log/log :debug (str "Connected uids change: %s" new)))))
 
 (defonce broadcast-enabled?_ (atom true))
 
+(let [broadcast!
+      (fn [i]
+        (let [uids (:any @connected-uids)]
+          (#(log/log :debug  %)
+            (str :some/broadcast " %s uids " (count uids)))
+          (doseq [uid uids]
+            (chsk-send! uid
+              [:some/broadcast
+               {:what-is-this "An async broadcast pushed from server"
+                :how-often "Every 10 seconds"
+                :to-whom uid
+                :i i}]))))]
+
+  (go-loop [i 0]
+    (<! (async/timeout 10000))
+    (when @broadcast-enabled?_ (broadcast! i))
+    (recur (inc i))))
 
 ;;;; Sente event handlers
 
@@ -93,8 +109,8 @@
 
 (defmethod -event-msg-handler :comment-list/add-comment
   [{:as ev-msg :keys [?reply-fn ?data send-fn]}]
-  (log/log :info (str ":comment-list/add-comment : " (:content ?data) ))
-  (if (not (nil? ?data)) (db/event! {:event ?data})))
+  (log/log :debug (str ":comment-list/add-comment : " (:content ?data) ))
+  (if (not (nil? ?data)) (db/event! {:event (:content ?data)})))
 
 ;;;; Sente event router (our `event-msg-handler` loop)
 
@@ -116,3 +132,4 @@
   (do
     (log/log :info "Stopping Websockets on backend.")
     (stop-router!)))
+
