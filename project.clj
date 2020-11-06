@@ -29,7 +29,8 @@
                  [binaryage/devtools "0.9.7"]
                  [cider/cider-nrepl "0.21.1"]
                  [http-kit "2.5.0"]
-                 [com.taoensso/sente "1.16.0"]                 
+                 [com.taoensso/sente "1.16.0"]   
+                 [com.taoensso/encore "3.9.1"]
                  [rum/rum "0.12.3"]
                  [org.clojure/clojure "1.10.1"]
                  [org.clojure/clojurescript "1.10.773" :scope "provided"]
@@ -67,6 +68,7 @@
     {:target :browser
      :output-dir "target/cljsbuild/public/js"
      :asset-path "/js"
+     :jvm-opts ["-Xmx2g"]
      :modules {:app {:entries [luminus-full-stack.client]}}
      :devtools {:watch-dir "resources/public"}}
     :test
