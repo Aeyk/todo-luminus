@@ -1,5 +1,6 @@
-(ns luminus-full-stack.routes.websockets  
-  (:require [luminus-full-stack.db.core :as db]            
+(ns luminus-full-stack.routes.websockets    
+  (:require [luminus-full-stack.config :refer [env]]
+            [luminus-full-stack.db.core :as db]            
             [reitit.ring :as ring]
             [reitit.core :as route]
             [org.httpkit.server :as server
@@ -10,7 +11,7 @@
             [clojure.core.async :as async  
              :refer (<! <!! >! >!! put! chan go go-loop)]
             [clojure.tools.logging :as log]
-            [mount.core :refer [defstate]]))
+            [mount.core :refer [defstate] :as mount]))
 
 (let [packer :edn
       ;; (sente-transit/get-transit-packer) ; needs Transit dep
@@ -28,17 +29,6 @@
   )
 
 (defstate channels :start (atom #{}))
-
-(defstate ^{:on-reload :noop} event-listener
-  :start (db/add-listener
-           db/notifications-connection
-           :events
-           (fn [_ _ message]
-             (doseq [channel @channels]
-               (server/send! channel message))))
-  :stop (db/remove-listener
-          db/notifications-connection
-          event-listener))
 
 (defn persist-event! [_ event]
   (db/event! {:event event}))
@@ -80,7 +70,6 @@
                 :how-often "Every 10 seconds"
                 :to-whom uid
                 :i i}]))))]
-
   (go-loop [i 0]
     (<! (async/timeout 10000))
     (when @broadcast-enabled?_ (broadcast! i))
@@ -134,7 +123,6 @@
       ch-chsk event-msg-handler)))
 
 
-
 (defstate ^:dynamic *ws*
   :start 
   (do (log/log :info "Starting Websockets on backend.")
@@ -144,3 +132,16 @@
     (log/log :info "Stopping Websockets on backend.")
     (stop-router!)))
 
+(defstate ^{:on-reload :noop} event-listener
+  :start (db/add-listener
+           db/notifications-connection
+           :events
+           (fn [_ _ message]
+             (doseq [channel @channels]
+               (server/send! channel message))))
+  :stop (db/remove-listener
+          db/notifications-connection
+          event-listener))
+
+(mount/start  #'env #'db/notifications-connection #'event-listener)
+(mount/stop)

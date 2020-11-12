@@ -16,7 +16,8 @@
 (conman/bind-connection *db* "sql/queries.sql")
 
 (defstate notifications-connection
-  :start (jdbc/get-connection {:connection-uri (env :database-url)})
+  :start 
+  (jdbc/get-connection {:connection-uri (env :database-url)})
   :stop (.close notifications-connection))
 
 (defn add-listener [conn id listener-fn]
@@ -25,8 +26,8 @@
                      (listener-fn chan-id channel message)))]
     (.addNotificationListener conn listener)
     (jdbc/execute!
-      {:connection notifications-connection}
-      ["LISTEN ?" (name id)])
+      {:connection-uri (env :database-url)}
+      [(str "LISTEN " (name id))])
     listener))
 
 (defn remove-listener [conn listener]
