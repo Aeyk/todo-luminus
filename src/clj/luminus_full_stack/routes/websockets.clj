@@ -88,6 +88,14 @@
     (log/log :info (str ":comment-list/add-comment : " content))
   (if (not (nil? content)) (db/event! {:event content}))))
 
+
+(defmethod -event-msg-handler :comment-list/get-comments
+  [{:as ev-msg :keys [?reply-fn ?data send-fn]}]
+  (let [content (:content ?data)]
+    (log/log :info (str ":comment-list/get-comments : " (db/get-events)))
+  (if (not (nil? content)) (db/event! {:event content}))))
+
+
 ;;;; Sente event router (our `event-msg-handler` loop)
 
 (defonce router_ (atom nil))
@@ -118,6 +126,3 @@
   :stop (db/remove-listener
           db/notifications-connection
           event-listener))
-
-(mount/start  #'env #'db/notifications-connection #'event-listener)
-(mount/stop)
