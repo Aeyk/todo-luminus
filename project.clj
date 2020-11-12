@@ -3,7 +3,8 @@
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
 
-  :dependencies [[ch.qos.logback/logback-classic "1.2.3"]
+  :dependencies [[ch.qos.logback/logback-classic "1.2.3"]                 
+                 [io.netty/netty-transport-native-epoll "4.1.53.Final"]
                  [cheshire "5.10.0"]
                  [clojure.java-time "0.3.2"]
                  [com.cognitect/transit-clj "1.0.324"]
@@ -69,7 +70,8 @@
     {:target :browser
      :output-dir "target/cljsbuild/public/js"
      :asset-path "/js"
-     :jvm-opts ["-Xmx2g"]
+     ;; https://stackoverflow.com/questions/57885828/netty-cannot-access-class-jdk-internal-misc-unsafe
+     :jvm-opts ["-Xmx2g" "--add-opens java.base/jdk.internal.misc=ALL-UNNAMED" "-Dio.netty.tryReflectionSetAccessible=true" "--illegal-access=warn"] 
      :modules {:app {:entries [luminus-full-stack.client]}}
      :devtools {:watch-dir "resources/public"}}
     :test
