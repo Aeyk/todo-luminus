@@ -40,8 +40,7 @@
      [:button#btn1 {:type "button"} "chsk-send! (w/o reply)"]
      [:button#btn2 {:type "button"} "chsk-send! (with reply)"]]
     [:p
-     [:button#btn3 {:type "button"} "Test rapid server>user async pushes"]
-     [:button#btn4 {:type "button"} "Toggle server>user async broadcast push loop"]]
+     [:button#btn3 {:type "button"} "Test rapid server>user async pushes"]]
     [:p
      [:button#btn5 {:type "button"} "Disconnect"]
      [:button#btn6 {:type "button"} "Reconnect"]]

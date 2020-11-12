@@ -68,13 +68,6 @@
   (let [[?uid ?csrf-token ?handshake-data] ?data]
     (->output! "Handshake: %s" ?data)))
 
-
-(defmethod -event-msg-handler :some/broadcast
-  [{:as ev-msg :keys [?data]}]
-  (let [[?uid ?csrf-token ?handshake-data] ?data]
-    (->output! :some/broadcast " %s " ?data)))
-
-
 (def comments (atom ["I can be a comment" "I can too"]))
 (def potential-comment (atom ""))
 

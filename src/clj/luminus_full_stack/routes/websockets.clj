@@ -56,25 +56,6 @@
     (when (not= old new)
       (log/log :info (str "Connected uids change: %s" new)))))
 
-(defonce broadcast-enabled?_ (atom true))
-
-(let [broadcast!
-      (fn [i]
-        (let [uids (:any @connected-uids)]
-          (#(log/log :info  %)
-            (str :some-new/broadcast " %s uids " (count uids)))
-          (doseq [uid uids]
-            (chsk-send! uid
-              [:some/broadcast
-               {:what-is-this "An async broadcast pushed from server"
-                :how-often "Every 10 seconds"
-                :to-whom uid
-                :i i}]))))]
-  (go-loop [i 0]
-    (<! (async/timeout 10000))
-    (when @broadcast-enabled?_ (broadcast! i))
-    (recur (inc i))))
-
 ;;;; Sente event handlers
 
 (defmulti -event-msg-handler
@@ -101,15 +82,9 @@
 ;; (defmethod -event-msg-handler :example/test-rapid-push
 ;;   [ev-msg] (test-fast-server>user-pushes))
 
-(defmethod -event-msg-handler :example/toggle-broadcast
-  [{:as ev-msg :keys [?reply-fn]}]
-  (let [loop-enabled? (swap! broadcast-enabled?_ not)]
-    (?reply-fn loop-enabled?)))
-
 (defmethod -event-msg-handler :comment-list/add-comment
   [{:as ev-msg :keys [?reply-fn ?data send-fn]}]
   (let [content (:content ?data)]
-    (db/event! {:event content})
     (log/log :info (str ":comment-list/add-comment : " content))
   (if (not (nil? content)) (db/event! {:event content}))))
 
