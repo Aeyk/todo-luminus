@@ -54,14 +54,14 @@
 (add-watch connected-uids :connected-uids
   (fn [_ _ old new]
     (when (not= old new)
-      (log/log :debug (str "Connected uids change: %s" new)))))
+      (log/log :info (str "Connected uids change: %s" new)))))
 
 (defonce broadcast-enabled?_ (atom true))
 
 (let [broadcast!
       (fn [i]
         (let [uids (:any @connected-uids)]
-          (#(log/log :debug  %)
+          (#(log/log :info  %)
             (str :some-new/broadcast " %s uids " (count uids)))
           (doseq [uid uids]
             (chsk-send! uid
@@ -94,7 +94,7 @@
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (let [session (:session ring-req)
         uid     (:uid     session)]
-    (log/log :debug (str "Unhandled event: %s" event))
+    (log/log :info (str "Unhandled event: %s" event))
     (when ?reply-fn
       (?reply-fn {:umatched-event-as-echoed-from-server event}))))
 
@@ -109,7 +109,7 @@
 (defmethod -event-msg-handler :comment-list/add-comment
   [{:as ev-msg :keys [?reply-fn ?data send-fn]}]
   (let [content (:content ?data)]
-    (log/log :debug (str ":comment-list/add-comment : " content))
+    (log/log :info (str ":comment-list/add-comment : " content))
   (if (not (nil? content)) (db/event! {:event content}))))
 
 ;;;; Sente event router (our `event-msg-handler` loop)
