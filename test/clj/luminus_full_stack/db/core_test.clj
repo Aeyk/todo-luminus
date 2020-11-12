@@ -4,7 +4,7 @@
    [java-time.pre-java8]
    [luminus-migrations.core :as migrations]
    [clojure.test :refer :all]
-   [next.jdbc :as jdbc]
+   [clojure.java.jdbc :as jdbc]
    [luminus-full-stack.config :refer [env]]
    [mount.core :as mount]))
 

@@ -3,7 +3,7 @@
             [reitit.ring :as ring]
             [reitit.core :as route]
             [org.httpkit.server :as server
-             :refer [send! with-channel on-close on-receive]]            
+             :refer [as-channel send! with-channel on-close on-receive]]            
             [taoensso.sente :as sente]            
             [taoensso.sente.server-adapters.http-kit 
              :refer (get-sch-adapter)]
@@ -11,7 +11,6 @@
              :refer (<! <!! >! >!! put! chan go go-loop)]
             [clojure.tools.logging :as log]
             [mount.core :refer [defstate]]))
-
 
 (let [packer :edn
       ;; (sente-transit/get-transit-packer) ; needs Transit dep
@@ -28,7 +27,18 @@
   (def connected-uids                connected-uids) ; Watchable, read-only atom
   )
 
-(defonce channels (atom #{}))
+(defstate channels :start (atom #{}))
+
+(defstate ^{:on-reload :noop} event-listener
+  :start (db/add-listener
+           db/notifications-connection
+           :events
+           (fn [_ _ message]
+             (doseq [channel @channels]
+               (server/send! channel message))))
+  :stop (db/remove-listener
+          db/notifications-connection
+          event-listener))
 
 (defn persist-event! [_ event]
   (db/event! {:event event}))
@@ -46,10 +56,10 @@
      (send! channel msg)))
 
 (defn websocket-handler [request]
-  (with-channel request channel
-    (connect! channel)
-    (on-close channel (partial disconnect! channel))
-    (on-receive channel #(notify-clients %))))
+  (as-channel request #_channel
+    {:on-open connect!
+    :on-close disconnect!
+    :on-receive persist-event!}))
 
 (add-watch connected-uids :connected-uids
   (fn [_ _ old new]
@@ -62,7 +72,7 @@
       (fn [i]
         (let [uids (:any @connected-uids)]
           (#(log/log :debug  %)
-            (str :some/broadcast " %s uids " (count uids)))
+            (str :some-new/broadcast " %s uids " (count uids)))
           (doseq [uid uids]
             (chsk-send! uid
               [:some/broadcast
@@ -109,8 +119,9 @@
 
 (defmethod -event-msg-handler :comment-list/add-comment
   [{:as ev-msg :keys [?reply-fn ?data send-fn]}]
-  (log/log :debug (str ":comment-list/add-comment : " (:content ?data) ))
-  (if (not (nil? ?data)) (db/event! {:event (:content ?data)})))
+  (let [content (:content ?data)]
+    (log/log :debug (str ":comment-list/add-comment : " content))
+  (if (not (nil? content)) (db/event! {:event content}))))
 
 ;;;; Sente event router (our `event-msg-handler` loop)
 

@@ -29,11 +29,13 @@
   (def chsk-send! send-fn) ; ChannelSocket's send API fn
   (def chsk-state state)   ; Watchable, read-only atom
   )
+
 (enable-console-print!)
 
 (defn ->output! [fmt & args]
   (let [msg (apply encore/format fmt args)]
-    (log/log :info msg)))
+    (js/console.log)
+       msg))
 
 (defmulti -event-msg-handler
   "Multimethod to handle Sente `event-msg`s"
@@ -99,9 +101,9 @@
                      (.-value 
                        (.querySelector 
                          js/document "form input"))}] 1000 
-         (fn [callback-reply])))}
+         (fn [callback-reply]
+           (callback-reply "Hello"))))}
     "Submit"]])
-
 
 (defn start []
   (rum/mount 
