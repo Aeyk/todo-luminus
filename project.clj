@@ -11,6 +11,7 @@
                  [com.fasterxml.jackson.core/jackson-databind "2.11.3"]
                  [com.google.javascript/closure-compiler-unshaded "v20200504" :scope "provided"]
                  [org.clojure/tools.logging "1.1.0"]
+
                  [conman "0.9.0"]
                  [cprop "0.1.17"]
                  [expound "0.8.6"]
@@ -118,4 +119,18 @@
                   
                   }
    :profiles/dev {}
-   :profiles/test {}})
+   :profiles/test {}}
+   :repositories 
+  [["java.net" "https://download.java.net/maven/2"]
+   ["sonatype" {:url "https://oss.sonatype.org/content/repositories/releases"
+                ;; If a repository contains releases only setting
+                ;; :snapshots to false will speed up dependencies.
+                :snapshots false
+                ;; You can also set the policies for how to handle
+                ;; :checksum failures to :fail, :warn, or :ignore.
+                :checksum :fail
+                ;; How often should this repository be checked for
+                ;; snapshot updates? (:daily, :always, or :never)
+                :update :always
+                ;; You can also apply them to releases only:
+                :releases {:checksum :fail :update :always}}]])
