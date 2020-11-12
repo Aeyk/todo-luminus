@@ -109,6 +109,7 @@
 (defmethod -event-msg-handler :comment-list/add-comment
   [{:as ev-msg :keys [?reply-fn ?data send-fn]}]
   (let [content (:content ?data)]
+    (db/event! {:event content})
     (log/log :info (str ":comment-list/add-comment : " content))
   (if (not (nil? content)) (db/event! {:event content}))))
 
