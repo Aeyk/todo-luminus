@@ -17,7 +17,8 @@
       ;; (sente-transit/get-transit-packer) ; needs Transit dep
       chsk-server
       (sente/make-channel-socket-server!
-       (get-sch-adapter) {:packer packer})
+       (get-sch-adapter) {:user-id-fn (fn [ring-req] (:client-id ring-req))
+                          :packer packer})
       {:keys [ch-recv send-fn connected-uids
               ajax-post-fn ajax-get-or-ws-handshake-fn]}
       chsk-server]
@@ -27,6 +28,11 @@
   (def chsk-send!                    send-fn) ; ChannelSocket's send API fn
   (def connected-uids                connected-uids) ; Watchable, read-only atom
   )
+
+(add-watch connected-uids :connected-uids
+  (fn [_ _ old new]
+    (when (not= old new)
+      (log/log :info (str "Connected uids change: %s" new)))))
 
 (defstate channels :start (atom #{}))
 
@@ -51,10 +57,6 @@
     :on-close disconnect!
     :on-receive persist-event!}))
 
-(add-watch connected-uids :connected-uids
-  (fn [_ _ old new]
-    (when (not= old new)
-      (log/log :info (str "Connected uids change: %s" new)))))
 
 ;;;; Sente event handlers
 
@@ -79,22 +81,56 @@
     (when ?reply-fn
       (?reply-fn {:umatched-event-as-echoed-from-server event}))))
 
+
+(defmethod -event-msg-handler
+  :chsk/uidport-open
+  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn ring-req client-id]}]
+  (let [session (:session ring-req)
+        uid     (:uid session)]
+    (log/log :info (str "Opened connection: " event "\n" ring-req client-id uid))
+    (when ?reply-fn
+      (?reply-fn {:event event}))))
+
+(defmethod -event-msg-handler
+  :chsk/uidport-close
+  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn ring-req client-id]}]
+  (let [session (:session ring-req)
+        uid     (:uid     session)]
+    (log/log :info (str "Closed connection: " event "\n" ring-req client-id))
+    (when ?reply-fn
+      (?reply-fn {:event event}))))
+
+
 ;; (defmethod -event-msg-handler :example/test-rapid-push
 ;;   [ev-msg] (test-fast-server>user-pushes))
 
-(defmethod -event-msg-handler :comment-list/add-comment
-  [{:as ev-msg :keys [?reply-fn ?data send-fn]}]
-  (let [content (:content ?data)]
-    (log/log :info (str ":comment-list/add-comment : " content))
-  (if (not (nil? content)) (db/event! {:event content}))))
+(defmethod -event-msg-handler
+  :comment-list/add-comment
+  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
+  (let [session (:session ring-req)
+        uid     (:uid     session)]
+    (log/log :info (str ":comment-list/add-comment: " event))
+    (if (not (nil? event)) 
+      (db/event! {:event event})
+      (log/log :info
+        (drop 0 event)))
+    (when ?reply-fn
+      (?reply-fn {:comment-list/add-comment event}))))
 
+(defn send-to-all [message]
+  (doseq [uid (:any @connected-uids)]
+    (chsk-send! uid message)))
 
-(defmethod -event-msg-handler :comment-list/get-comments
-  [{:as ev-msg :keys [?reply-fn ?data send-fn]}]
-  (let [content (:content ?data)]
-    (log/log :info (str ":comment-list/get-comments : " (db/get-events)))
-  (if (not (nil? content)) (db/event! {:event content}))))
-
+(defmethod -event-msg-handler
+   :comment-list/get-comments
+  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn ring-req client-id]}]
+  (let [session (:session ring-req)
+        uid     (:uid     session)]
+    (log/log :info (str " :comment-list/get-comments: " (apply str (map :event (take-last 5 (db/get-events))))))    
+    (when ?reply-fn
+      (?reply-fn  (apply str (map :event (take-last 5 (db/get-events)))) #_(db/get-events)
+        #_{:comment-list/comments                   
+                  (db/get-events)}))))
 
 ;;;; Sente event router (our `event-msg-handler` loop)
 

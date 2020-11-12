@@ -35,10 +35,12 @@
     {% style "/css/screen.css" %}
 
     {% script "/js/app.js" %}
+    <script src="/init" type="text/javascript"></script>
+    
     <script type="text/javascript">
       var csrfToken = "{{csrf-token}}";
       luminus_full_stack.client.init_BANG_();
     </script>
-
+    
   </body>
 </html>

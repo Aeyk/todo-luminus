@@ -68,6 +68,13 @@
   (let [[?uid ?csrf-token ?handshake-data] ?data]
     (->output! "Handshake: %s" ?data)))
 
+(defmethod -event-msg-handler :comment-list/comments
+  [{:as ev-msg :keys [event ?reply-fn ?data send-fn]}]
+  (let [content (:content ?data)
+        events (map :event ?data)]
+    (log/log :info (str ":comment-list/comments : " event events))))
+
+
 (def comments (atom ["I can be a comment" "I can too"]))
 (def potential-comment (atom ""))
 
@@ -77,10 +84,17 @@
   [:pre
    (str "<em>"text"</em>")])
 
-(rum/defc my-form < {}
+(rum/defc my-form < 
+  {:did-mount 
+   (fn [e] 
+     (chsk-send! [:comment-list/get-comments] 1005 
+       (fn [callback-reply args]
+         (js/console.log callback-reply args)
+         (callback-reply args)))
+     )}
   []
   [:form 
-   [:input]
+   [:input]    
    [:button     
     {:on-click 
      (fn[e] 
@@ -88,20 +102,40 @@
        (#(log/log :info %) 
          (str 
            "form input: "
-           (.-value (.querySelector js/document "form input"))))
+           (.-value (.querySelector js/document "form input"))))       
        (chsk-send! [:comment-list/add-comment 
                     {:content 
                      (.-value 
                        (.querySelector 
-                         js/document "form input"))}] 1000 
-         (fn [callback-reply]
+                         js/document "form input"))}] 1003 
+         (fn [callback-reply]           
            (callback-reply "Hello"))))}
-    "Submit"]])
+    "Submit"]
+   [:button 
+    {:on-click 
+     (fn [e]
+       (js/e.preventDefault)
+       (chsk-send! [:comment-list/get-comments] 1002))}
+    "Update"]])
+
+(def events (atom []))
+
+(rum/defc my-list < {}
+  
+  []
+  [:ul
+   (for [event @events]
+     [:li event])])
+
+(defn app []
+  
+  [(em-tag "Hello")
+   (my-form)
+   (my-list)])
 
 (defn start []
   (rum/mount 
-    [(em-tag "Hello")
-    (my-form)]
+    (app)
     (js/document.getElementById "app")))
 
 (defn ^:export init! []
