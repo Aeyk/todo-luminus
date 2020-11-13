@@ -1,5 +1,6 @@
 (ns luminus-full-stack.client
   (:require 
+   [clojure.tools.reader.edn :as edn]
    [rum.core :as rum]
    [taoensso.encore :as encore :refer-macros (have have?)]
    [taoensso.sente  :as sente :refer (cb-success?)]   
@@ -72,7 +73,7 @@
   [{:as ev-msg :keys [event ?reply-fn ?data send-fn]}]
   (let [content (:content ?data)
         events (map :event ?data)]
-    (log/log :info (str ":comment-list/comments : " event events))))
+    (log/log :info (str ":comment-list/comments : " content event events))))
 
 
 (def comments (atom ["I can be a comment" "I can too"]))
@@ -85,13 +86,7 @@
    (str "<em>"text"</em>")])
 
 (rum/defc my-form < 
-  {:did-mount 
-   (fn [e] 
-     (chsk-send! [:comment-list/get-comments] 1005 
-       (fn [callback-reply args]
-         (js/console.log callback-reply args)
-         (callback-reply args)))
-     )}
+  {}
   []
   [:form 
    [:input]    
@@ -103,7 +98,7 @@
          (str 
            "form input: "
            (.-value (.querySelector js/document "form input"))))       
-       (chsk-send! [:comment-list/add-comment 
+       #_(chsk-send! [:comment-list/add-comment 
                     {:content 
                      (.-value 
                        (.querySelector 
@@ -115,7 +110,9 @@
     {:on-click 
      (fn [e]
        (js/e.preventDefault)
-       (chsk-send! [:comment-list/get-comments] 1002))}
+       (chsk-send! [:comment-list/get-comments] 1002
+         (fn [s] (js/console.log 
+                   (.-arr s)))))}
     "Update"]])
 
 (def events (atom []))
@@ -127,9 +124,13 @@
    (for [event @events]
      [:li event])])
 
-(defn app []
-  
-  [(em-tag "Hello")
+(rum/defc app <
+  {:did-mount 
+   (fn [state]      
+     (js/console.log (:rum/args  state)))}
+  []
+  [:div 
+   (em-tag "Hello")
    (my-form)
    (my-list)])
 

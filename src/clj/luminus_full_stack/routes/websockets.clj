@@ -11,7 +11,8 @@
             [clojure.core.async :as async  
              :refer (<! <!! >! >!! put! chan go go-loop)]
             [clojure.tools.logging :as log]
-            [mount.core :refer [defstate] :as mount]))
+            [mount.core :refer [defstate] :as mount]
+            [clojure.edn :as edn]))
 
 (let [packer :edn
       ;; (sente-transit/get-transit-packer) ; needs Transit dep
@@ -87,7 +88,7 @@
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn ring-req client-id]}]
   (let [session (:session ring-req)
         uid     (:uid session)]
-    (log/log :info (str "Opened connection: " event "\n" ring-req client-id uid))
+    (log/log :info (str "Opened connection: " event "\n"))
     (when ?reply-fn
       (?reply-fn {:event event}))))
 
@@ -96,7 +97,7 @@
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn ring-req client-id]}]
   (let [session (:session ring-req)
         uid     (:uid     session)]
-    (log/log :info (str "Closed connection: " event "\n" ring-req client-id))
+    (log/log :info (str "Closed connection: " event "\n"))
     (when ?reply-fn
       (?reply-fn {:event event}))))
 
@@ -126,11 +127,16 @@
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn ring-req client-id]}]
   (let [session (:session ring-req)
         uid     (:uid     session)]
-    (log/log :info (str " :comment-list/get-comments: " (apply str (map :event (take-last 5 (db/get-events))))))    
+    (    
+     #(chsk-send! 
+        client-id [:comment-list/comments [(edn/read-string %)]])
+      (str         
+        (db/get-events)))    
     (when ?reply-fn
-      (?reply-fn  (apply str (map :event (take-last 5 (db/get-events)))) #_(db/get-events)
-        #_{:comment-list/comments                   
-                  (db/get-events)}))))
+      (?reply-fn  #_
+        (apply str (map :event (take-last 5 (db/get-events)))) #_(db/get-events)
+        {:comment-list/comments
+         (str (db/get-events))}))))
 
 ;;;; Sente event router (our `event-msg-handler` loop)
 
