@@ -12,7 +12,7 @@
              :refer (<! <!! >! >!! put! chan go go-loop)]
             [clojure.tools.logging :as log]
             [mount.core :refer [defstate] :as mount]
-            [clojure.edn :as edn]))
+            [clojure.tools.reader :as edn]))
 
 (let [packer :edn
       ;; (sente-transit/get-transit-packer) ; needs Transit dep
@@ -127,10 +127,12 @@
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn ring-req client-id]}]
   (let [session (:session ring-req)
         uid     (:uid     session)]
-    (    
-     #(chsk-send! 
-        client-id [:comment-list/comments [(edn/read-string %)]])
-      (str         
+    ((juxt      
+       #_#(log/log :info %)
+       #(chsk-send! 
+          client-id [:comment-list/comments [(edn/read-string %)]]))
+      (str 
+        #_(comment ":client-id: " client-id " \n:comment-list/get-comments: ") 
         (db/get-events)))    
     (when ?reply-fn
       (?reply-fn  #_

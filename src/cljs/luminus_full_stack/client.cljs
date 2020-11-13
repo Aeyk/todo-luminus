@@ -1,6 +1,6 @@
 (ns luminus-full-stack.client
   (:require 
-   [clojure.tools.reader.edn :as edn]
+   [cljs.reader :as edn]
    [rum.core :as rum]
    [taoensso.encore :as encore :refer-macros (have have?)]
    [taoensso.sente  :as sente :refer (cb-success?)]   
@@ -110,9 +110,13 @@
     {:on-click 
      (fn [e]
        (js/e.preventDefault)
-       (chsk-send! [:comment-list/get-comments] 1002
-         (fn [s] (js/console.log 
-                   (.-arr s)))))}
+       (chsk-send! 
+         [:comment-list/get-comments] 1002
+         (fn [s] 
+           (js/console.log 
+             (clj->js
+               (edn/read-string  
+                 (nth (.-arr s) 1)))) s)))}
     "Update"]])
 
 (def events (atom []))
@@ -127,7 +131,7 @@
 (rum/defc app <
   {:did-mount 
    (fn [state]      
-     (js/console.log (:rum/args  state)))}
+     (js/console.log state))}
   []
   [:div 
    (em-tag "Hello")

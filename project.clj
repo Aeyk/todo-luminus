@@ -50,6 +50,7 @@
                  [ring/ring-core "1.8.2"]
                  [ring/ring-defaults "0.3.2"]
                  [selmer "1.12.31"]
+                 [org.clojure/tools.reader "1.3.3"]
                  [thheller/shadow-cljs "2.11.5" :scope "provided"]]
 
   :min-lein-version "2.0.0"
