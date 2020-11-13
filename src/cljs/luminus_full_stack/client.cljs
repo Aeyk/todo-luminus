@@ -99,12 +99,12 @@
            "form input: "
            (.-value (.querySelector js/document "form input"))))       
        #_(chsk-send! [:comment-list/add-comment 
-                    {:content 
-                     (.-value 
-                       (.querySelector 
-                         js/document "form input"))}] 1003 
-         (fn [callback-reply]           
-           (callback-reply "Hello"))))}
+                      {:content 
+                       (.-value 
+                         (.querySelector 
+                           js/document "form input"))}] 1003 
+           (fn [callback-reply]           
+             (callback-reply "Hello"))))}
     "Submit"]
    [:button 
     {:on-click 
@@ -112,11 +112,13 @@
        (js/e.preventDefault)
        (chsk-send! 
          [:comment-list/get-comments] 1002
-         (fn [s] 
-           (js/console.log 
-             (clj->js
-               (edn/read-string  
-                 (nth (.-arr s) 1)))) s)))}
+         (fn [s]
+           (let [id-event-kv
+                 (map (juxt :id :event) 
+                   (edn/read-string  
+                     (nth (.-arr s) 1)))]
+             (js/console.log 
+               (clj->js id-event-kv))))))}
     "Update"]])
 
 (def events (atom []))
