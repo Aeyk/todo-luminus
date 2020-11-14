@@ -90,7 +90,7 @@
     [:comment-list/get-comments] 1002
     (fn [s]
       (let [id-event-kv
-            (map (juxt :id :event) 
+            (map (juxt :event) 
               (edn/read-string  
                 (nth (.-arr ^Object s) 1)))]        
         (reset! events (clj->js id-event-kv))
@@ -123,12 +123,13 @@
     #_(js/console.log (clj->js old) new)))
 
 (rum/defc my-list < 
-  rum/reactive 
+  rum/reactive   
   [*events]
-  #_{:will-mount (juxt js/console.log get-messages)}
+  {:init (fn [state] (get-messages))}
   []
   [:ul
-   (for [event (rum/react events)]
+   (for [event  
+         (rum/react events)]
      [:li event])])
 
 (rum/defc app <
