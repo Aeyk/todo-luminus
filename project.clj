@@ -3,7 +3,8 @@
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
 
-  :dependencies [[ch.qos.logback/logback-classic "1.2.3"]                 
+  :dependencies [[ch.qos.logback/logback-classic "1.2.3"]   
+                [keybind "2.2.0"]              
                  [io.netty/netty-transport-native-epoll "4.1.53.Final"]
                  [cheshire "5.10.0"]
                  [clojure.java-time "0.3.2"]
