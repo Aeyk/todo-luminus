@@ -7,9 +7,7 @@
    [taoensso.sente  :as sente :refer (cb-success?)]   
    [taoensso.timbre :as log]))
 
-(def handlers {:on-message (fn [e] (prn (.-data e)))
-               :on-open    #(prn "Opening a new connection")
-               :on-close   #(prn "Closing a connection")})
+(def events (atom []))
 
 (def ?csrf-token
   (when-let [el (.getElementById js/document "sente-csrf-token")]
@@ -18,6 +16,8 @@
 (if ?csrf-token
   (println "CSRF token detected in HTML, great!")
   (println "CSRF token NOT detected in HTML, default Sente config will reject requests"))
+
+(enable-console-print!)
 
 (let [{:keys [chsk ch-recv send-fn state]}
       (sente/make-channel-socket-client!
@@ -32,7 +32,30 @@
   (def chsk-state state)   ; Watchable, read-only atom
   )
 
-(enable-console-print!)
+(defn get-messages []
+  (chsk-send! 
+    [:comment-list/get-comments] 5002
+    (fn [s]
+      (let [new-event
+            (map 
+              (comp :content second cljs.reader/read-string :event) 
+              (reverse 
+                (take-last 10 
+                  (cljs.reader/read-string (nth (.-arr ^Object s) 1)))))]        
+        (reset! events 
+          new-event)))))
+
+(defn submit-message [msg]
+  (chsk-send! 
+    [:comment-list/add-comment {:content msg}] 1002))
+
+
+(def handlers 
+  {:on-message 
+   (fn [e] ((comp 
+              js/console.log  #(log/log :info %) prn) (.-data e)))
+   :on-open    #(prn "Opening a new connection\n")
+   :on-close   #(prn "Closing a connection")})
 
 (defn ->output! [fmt & args]
   (let [msg (apply encore/format fmt args)]
@@ -76,69 +99,52 @@
         events (map :event ?data)]
     (log/log :info (str ":comment-list/comments : " content event events))))
 
+(add-watch events :events
+  (fn [_ _ old new]
+    (js/console.log (clj->js old new))))
 
-(def comments (atom ["I can be a comment" "I can too"]))
-(def potential-comment (atom ""))
-(def state (atom "John"))
-(def events (atom []))
+(defn ws-mixin [key]
+  {:will-mount
+   (fn [state]
+     (let [*data (atom nil)
+           comp  (:rum/react-component state)]
+       (chsk-send! 
+         [:comment-list/get-comments] 5002
+         (fn [data]
+           (let [new-event
+                 #_(map 
+                   (comp :content second cljs.reader/read-string :event)) 
+                 (reverse 
+                   (take-last 10 
+                     (cljs.reader/read-string (nth (.-arr ^Object data) 1))))]        
+             (reset! *data data)
+             (rum/request-render comp))))))})
 
 (rum/defc em-tag [text]
   [:pre
    (str "<em>"text"</em>")])
 
-(defn get-messages []
-  (chsk-send! 
-    [:comment-list/get-comments] 1002
-    (fn [s]
-      (let [new-event
-            (map 
-              (comp :content second cljs.reader/read-string :event) 
-              (reverse 
-                (take-last 10 
-                  (cljs.reader/read-string (nth (.-arr ^Object s) 1)))))]        
-        (reset! events 
-          new-event)
-        @events))))
-
-(rum/defc my-form < 
-  {:did-mount (fn [state]
-           (key/bind! "enter" ::enter
-             #(set! (.-value 
-                      (.querySelector 
-                        js/document "form input")) "")))}
+(rum/defc my-form <
+  (ws-mixin ::events)
+  {:after-render    
+   (fn [state]
+     (key/bind! "enter" ::enter
+       #(let [data (.-value 
+                    (.querySelector 
+                      js/document "form input"))]
+          (do 
+            (submit-message data)
+            (get-messages)
+            (set! (.-value 
+                    (.querySelector 
+                      js/document "form input")) "")))))}
   []
   [:form {:on-submit (fn [e] (.preventDefault e))}
-   [:input.comment ]    
-   #_[:button     
-    {:on-click 
-     (fn[e] 
-       (js/e.preventDefault)
-       (chsk-send! [:comment-list/add-comment 
-                    {:content 
-                     (.-value 
-                       (.querySelector 
-                         js/document "form input"))}] 1000)
-       (get-messages)
-       (set! (.-value (.querySelector js/document "form input")) ""))}
-    "Submit"]
-   #_[:button 
-    {:on-click 
-     (fn [e]
-       (js/e.preventDefault)
-       (get-messages))}
-    "Update"]])
-
-(add-watch events :events
-  (fn [_ _ old new]
-    #_(js/console.log (clj->js old) new)))
+   [:input]])
 
 (rum/defc my-list < 
-  rum/reactive   
-  [*events]
-  {:did-mount 
-   (fn [state]          
-     (get-messages)
-     (js/console.log @events ))}
+  rum/reactive    
+  [*events]  
   []
   [:ul
    (for [event  
@@ -146,10 +152,7 @@
      [:li [:p event]])])
 
 (rum/defc app <
-  {:did-mount 
-   (fn [state]
-     (get-messages)
-     (js/console.log (clj->js @events state)))}
+  {}
   []
   [:div 
    (em-tag "Hello")
