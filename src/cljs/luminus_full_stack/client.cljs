@@ -1,6 +1,7 @@
 (ns luminus-full-stack.client
   (:require 
    [cljs.reader :as edn]
+   [keybind.core :as key]
    [rum.core :as rum]
    [taoensso.encore :as encore :refer-macros (have have?)]
    [taoensso.sente  :as sente :refer (cb-success?)]   
@@ -93,7 +94,7 @@
             (map (juxt :event) 
               (edn/read-string  
                 (nth (.-arr ^Object s) 1)))]        
-        (reset! events (clj->js id-event-kv))
+        (reset! events (reverse (clj->js id-event-kv)))
         ((comp identity js/console.log) 
           (clj->js @events #_id-event-kv))))))
 
@@ -106,6 +107,12 @@
     {:on-click 
      (fn[e] 
        (js/e.preventDefault)
+       (chsk-send! [:comment-list/add-comment 
+                    {:content 
+                     (.-value 
+                       (.querySelector 
+                         js/document "form input"))}] 1000)
+       (get-messages)
        (#(log/log :info %)          
          (str 
            "form input: "
