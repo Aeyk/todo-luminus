@@ -78,12 +78,24 @@
 
 (def comments (atom ["I can be a comment" "I can too"]))
 (def potential-comment (atom ""))
-
 (def state (atom "John"))
+(def events (atom []))
 
 (rum/defc em-tag [text]
   [:pre
    (str "<em>"text"</em>")])
+
+(defn get-messages []
+  (chsk-send! 
+    [:comment-list/get-comments] 1002
+    (fn [s]
+      (let [id-event-kv
+            (map (juxt :id :event) 
+              (edn/read-string  
+                (nth (.-arr ^Object s) 1)))]        
+        (reset! events (clj->js id-event-kv))
+        ((comp identity js/console.log) 
+          (clj->js @events #_id-event-kv))))))
 
 (rum/defc my-form < 
   {}
@@ -94,40 +106,29 @@
     {:on-click 
      (fn[e] 
        (js/e.preventDefault)
-       (#(log/log :info %) 
+       (#(log/log :info %)          
          (str 
            "form input: "
-           (.-value (.querySelector js/document "form input"))))       
-       #_(chsk-send! [:comment-list/add-comment 
-                      {:content 
-                       (.-value 
-                         (.querySelector 
-                           js/document "form input"))}] 1003 
-           (fn [callback-reply]           
-             (callback-reply "Hello"))))}
+           (.-value (.querySelector js/document "form input")))))}
     "Submit"]
    [:button 
     {:on-click 
      (fn [e]
        (js/e.preventDefault)
-       (chsk-send! 
-         [:comment-list/get-comments] 1002
-         (fn [s]
-           (let [id-event-kv
-                 (map (juxt :id :event) 
-                   (edn/read-string  
-                     (nth (.-arr s) 1)))]
-             (js/console.log 
-               (clj->js id-event-kv))))))}
+       (get-messages))}
     "Update"]])
 
-(def events (atom []))
+(add-watch events :events
+  (fn [_ _ old new]
+    #_(js/console.log (clj->js old) new)))
 
-(rum/defc my-list < {}
-  
+(rum/defc my-list < 
+  rum/reactive 
+  [*events]
+  #_{:will-mount (juxt js/console.log get-messages)}
   []
   [:ul
-   (for [event @events]
+   (for [event (rum/react events)]
      [:li event])])
 
 (rum/defc app <
