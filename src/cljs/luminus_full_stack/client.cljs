@@ -142,9 +142,9 @@
   [:form {:on-submit (fn [e] (.preventDefault e))}
    [:input]])
 
-(rum/defc my-list < 
+(rum/defc my-list <  
   rum/reactive    
-  [*events]  
+  [*events]    
   []
   [:ul
    (for [event  
@@ -152,7 +152,9 @@
      [:li [:p event]])])
 
 (rum/defc app <
-  {}
+  {:after-render
+   (fn [state]
+     (get-messages))}
   []
   [:div 
    (em-tag "Hello")
