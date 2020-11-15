@@ -1,6 +1,7 @@
 (ns luminus-full-stack.routes.websockets    
   (:require [luminus-full-stack.config :refer [env]]
             [luminus-full-stack.db.core :as db]            
+            [luminus-full-stack.db.events :as events]            
             [reitit.ring :as ring]
             [reitit.core :as route]
             [org.httpkit.server :as server
@@ -161,12 +162,12 @@
     (stop-router!)))
 
 (defstate ^{:on-reload :noop} event-listener
-  :start (db/add-listener
-           db/notifications-connection
+  :start (events/add-listener
+           events/notifications-connection
            :events
            (fn [_ _ message]
              (doseq [channel @channels]
                (server/send! channel message))))
-  :stop (db/remove-listener
-          db/notifications-connection
+  :stop (events/remove-listener
+          events/notifications-connection
           event-listener))
