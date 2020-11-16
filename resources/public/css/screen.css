@@ -1,6 +1,24 @@
 html,
 body {
-	font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    margin: 10px;	
+}
+input {
+    margin-top: 20px;
+    width: 100%;
+}
+
+li {
+    background-color: #f1f1f1;
+    margin: 6px;
+    padding: 10px;
+}
+
+
+.disabled {
+    background-color: #fff;
+    color: red;
+    border: 1px solid grey;
 }
 @font-face {
   font-family: 'Material Icons';

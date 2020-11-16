@@ -49,7 +49,6 @@
   (chsk-send! 
     [:comment-list/add-comment {:content msg}] 1002))
 
-
 (def handlers 
   {:on-message 
    (fn [e] ((comp 
@@ -111,9 +110,7 @@
        (chsk-send! 
          [:comment-list/get-comments] 5002
          (fn [data]
-           (let [new-event
-                 #_(map 
-                   (comp :content second cljs.reader/read-string :event)) 
+           (let [new-event                 
                  (reverse 
                    (take-last 10 
                      (cljs.reader/read-string (nth (.-arr ^Object data) 1))))]        
@@ -149,15 +146,23 @@
   [:ul
    (for [event  
          (rum/react events)]
-     [:li [:p event]])])
+     [:li 
+      {:on-click 
+       (fn [e] 
+         (if (= "disabled" (-> e .-target .-className))
+           (set! (-> e .-target .-className) "")
+           (set! (-> e .-target .-className) "disabled"))
+         (js/console.log (-> e .-target)))} [:p event]])])
 
 (rum/defc app <
+  rum/reactive
+  [*events]
   {:after-render
    (fn [state]
      (get-messages))}
   []
-  [:div 
-   (em-tag "Hello")
+  [:div.container
+   (em-tag "Hello World")
    (my-form)
    (my-list)])
 
