@@ -149,10 +149,10 @@
      [:li 
       {:on-click 
        (fn [e] 
-         (if (= "disabled" (-> e .-target .-className))
-           (set! (-> e .-target .-className) "")
-           (set! (-> e .-target .-className) "disabled"))
-         (js/console.log (-> e .-target)))} [:p event]])])
+         (if (= "disabled" (-> e .-target .-parentNode .-className))
+           (set! (-> e .-target .-parentNode .-className) "")
+           (set! (-> e .-target .-parentNode .-className) "disabled"))
+         (js/console.log (-> e .-target .-parentNode)))} [:p event]])])
 
 (rum/defc app <
   rum/reactive
