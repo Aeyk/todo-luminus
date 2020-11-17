@@ -1,0 +1,20 @@
+* Todo List Clojure
+ - [[https://clojure.org][Clojure]] w/ [[https://github.com/http-kit/http-kit][http-kit]] for the HTTP and WebSockets connections on the backend and database connections
+ - [[https://clojurescript.org/][ClojureScript]] on the front end with shadow-cljs (see shadow-cljs.edn for options, dependencies)
+ - [[https://luminusweb.com/][Luminus]] as a general application structure 
+ - [[https://www.postgresql.org/][PostgreSQL]] (and [[https://github.com/impossibl/pgjdbc-ng][Impossibl PGJDBC-NG Driver]] for async support as standard JDBC doesnt support it for PGSQL)
+   - (you also will need to [[https://yogthos.net/posts/2016-11-05-LuminusPostgresNotifications.html][configure profiles.clj]] for your database connection)
+ - [[https://github.com/ptaoussanis/sente][Sente]] for WebSockets to send the updates
+ - [[https://github.com/tonsky/rum][Rum]] as React wrapper
+** Running
+If you are going to be editing the UI or frontend at all, you should run
+#+begin_src sh
+npx shadow-cljs watch app
+#+end_src
+to watch can compile changes to the ClojureScript. You can read about using shadow-cljs [[https://gitlab.com/nikperic/lein-shadow/-/blob/docs/shadow-cljs.edn.md][here]] and [[https://shadow-cljs.github.io/docs/UsersGuide.html][here.]]
+
+In another terminal window you should also run 
+#+begin_src sh
+lein run
+#+end_src
+to start the various back end components. 
