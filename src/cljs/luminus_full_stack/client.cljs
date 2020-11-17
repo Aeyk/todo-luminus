@@ -151,8 +151,8 @@
        (fn [e] 
          (if (= "disabled" (-> e .-target .-parentNode .-className))
            (set! (-> e .-target .-parentNode .-className) "")
-           (set! (-> e .-target .-parentNode .-className) "disabled"))
-         (js/console.log (-> e .-target .-parentNode)))} [:p event]])])
+           (set! (-> e .-target .-parentNode .-className) "disabled")))} 
+      [:p event]])])
 
 (rum/defc app <
   rum/reactive
